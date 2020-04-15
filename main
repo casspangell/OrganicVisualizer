@@ -1,0 +1,81 @@
+import processing.sound.*;
+
+//Mapping
+int cols, rows;
+int scl = 30;
+int w = 800;
+int h = 800;
+
+float flying = 0;
+
+float[][] terrain;
+
+//Audio
+FFT fft;
+AudioIn in;
+int bands = 512;
+float[] spectrum = new float[bands];
+
+void setup() {
+  size(600, 600, P3D);
+
+  cols = w/scl;
+  rows = h/scl;
+  terrain = new float[rows][cols];
+  
+  // Create an Input stream which is routed into the Amplitude analyzer
+  fft = new FFT(this, bands);
+  in = new AudioIn(this, 0);
+  
+  // start the Audio Input
+  in.start();
+  
+  // patch the AudioIn
+  fft.input(in);
+  
+}
+
+void draw() {
+  
+  //Trying to figure out how to detect when audio is off.... to be continued...
+  fft.analyze(spectrum);
+    for(int i=0; i < bands; i++) {
+      if(spectrum[i] > 0.001) {
+        println(spectrum[i]); 
+  
+      }
+  }
+  
+  flying -= 0.1;
+  
+  float sensitivity = 5; //<--------ADJUST THIS VALUE FOR AUDIO SENSITIVITY, 0 will negate everything
+  
+  float yoff = flying;
+    for(int y=0; y<rows; y++) {
+      float xoff = 0;
+      for(int x=0; x<cols; x++) {
+        terrain[x][y] = map(noise(xoff, yoff), 0, 1, -1000, spectrum[y]*height*sensitivity);
+        xoff += 0.1;
+      }
+      yoff += 0.1;
+    }
+    
+  background(0);
+  stroke(255);
+  noFill();
+  
+  translate(width/2, height/2.5); //The (0,0) needs to be centered and up
+  rotateX(PI/8); //Rotating the plane from flat to somewhere in between
+  translate(-w/2, -h/2);
+  
+  //Creating the triangles
+  for(int y=0; y<rows-1; y++) {
+    beginShape(TRIANGLE_STRIP); 
+    
+    for(int x=0; x<cols; x++) {
+      vertex(x*scl, y*scl, terrain[x][y]);
+      vertex(x*scl, (y+1)*scl, terrain[x][y+1]);
+      endShape();
+    }
+  }
+}
