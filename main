@@ -16,8 +16,12 @@ AudioIn in;
 int bands = 512;
 float[] spectrum = new float[bands];
 
+// Color gradient
+color startColor = color(255, 0, 0); // red
+color endColor = color(128, 0, 128); // purple
+
 void setup() {
-  size(600, 600, P3D);
+ fullScreen(P3D);
 
   cols = w/scl;
   rows = h/scl;
@@ -48,7 +52,7 @@ void draw() {
   
   flying -= 0.1;
   
-  float sensitivity = 5; //<--------ADJUST THIS VALUE FOR AUDIO SENSITIVITY, 0 will negate everything
+  float sensitivity = 10; //<--------ADJUST THIS VALUE FOR AUDIO SENSITIVITY, 0 will negate everything
   
   float yoff = flying;
     for(int y=0; y<rows; y++) {
@@ -60,6 +64,7 @@ void draw() {
       yoff += 0.1;
     }
     
+  float maxDistance = dist(0, 0, w, h); // maximum distance from top left to bottom right
   background(0);
   stroke(255);
   noFill();
@@ -68,11 +73,22 @@ void draw() {
   rotateX(PI/8); //Rotating the plane from flat to somewhere in between
   translate(-w/2, -h/2);
   
+  // Set up the stroke gradient
+  float gradientPosition = 0;
+  float gradientStep = 1.0/cols;
+  
   //Creating the triangles
   for(int y=0; y<rows-1; y++) {
     beginShape(TRIANGLE_STRIP); 
     
     for(int x=0; x<cols; x++) {
+      float distanceFromTopLeft = dist(0, 0, x*scl, y*scl);
+      float colorLerpValue = distanceFromTopLeft / maxDistance; // map distance to 0-1 range
+      
+      // interpolate between red and purple based on distance from top left
+      color vertexColor = lerpColor(color(255, 0, 0), color(0, 0, 255), colorLerpValue);
+      stroke(vertexColor);
+      
       vertex(x*scl, y*scl, terrain[x][y]);
       vertex(x*scl, (y+1)*scl, terrain[x][y+1]);
       endShape();
